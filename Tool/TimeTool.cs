@@ -6,55 +6,68 @@ using System;
 
 namespace StarGame.Tool
 {
-    [Serializable]
-    public class Timer
+    /// <summary>
+    /// 计时器
+    /// </summary>
+    public struct Timer
     {
-        public bool isFinish = false;
+        /// <summary>
+        /// 当前时间
+        /// </summary>
+        public float currentTime;
+        /// <summary>
+        /// 设置时间
+        /// </summary>
+        public float setTime;
 
-        public float interval;
-        private Action callBack;
+        public static Timer zero = new Timer(0f);
 
-        public float time = 0;
-        public Timer(float t, Action cb)
+        /// <summary>
+        /// 初始化计时器
+        /// </summary>
+        /// <param name="_setTime">设置时间</param>
+        public Timer(float _setTime)
         {
-            Reset(t, cb);
+            currentTime = 0;
+            this.setTime = _setTime;
         }
-
-        ~Timer()
+        /// <summary>
+        /// 赋值
+        /// </summary>
+        /// <param name="t"></param>
+        public void Ass(Timer t)
         {
-            callBack = null;
+            this.currentTime = t.currentTime;
+            this.setTime = t.setTime;
         }
-
-        public void Reset(float t, Action cb)
+        /// <summary>
+        /// 赋值
+        /// </summary>
+        /// <param name="c">当前时间</param>
+        /// <param name="s">设置时间</param>
+        public void Ass(float c,float s)
         {
-            this.interval = t;
-            callBack = cb;
-            this.time = 0;
-            isFinish = false;
+            this.currentTime = c;
+            this.setTime = s;
         }
-
-        public void Stop()
+        /// <summary>
+        /// 是否相等
+        /// </summary>
+        /// <param name="t">目标计时器</param>
+        /// <returns></returns>
+        public bool Equal(Timer t)
         {
-            this.time = 0;
-            this.isFinish = true;
-            this.callBack = null;
-        }
-
-        public void Update()
-        {
-            if (isFinish) return;
-            if (this.time >= interval)
-            {
-                callBack?.Invoke();
-                callBack = null;
-                isFinish = true;
-                this.time = 0;
-            }
-            this.time += Time.deltaTime;
+            if (this.currentTime == t.currentTime && this.setTime == t.setTime) return true;
+            else return false;
         }
     }
 
-    public class TimeTool : MonoSingleton<TimeTool>
+    public enum TimeUpdateMode
+    {
+        DeltaTime,
+        unscaledDeltaTime
+    }
+    public class TimeTool
     {
         #region 时间戳
         public static double timestamp
@@ -76,37 +89,36 @@ namespace StarGame.Tool
             return (time - startTime).TotalSeconds;
         }
         #endregion
-        public  List<Timer> timers = new List<Timer>();
 
-        private void Update()
+        /// <summary>
+        /// 触发计时器
+        /// </summary>
+        /// <param name="timer">计时器</param>
+        /// <param name="once">是否只计算一次</param>
+        /// <param name="mode">刷新模式</param>
+        /// <returns></returns>
+        public static bool Timertrigger(ref Timer timer,bool once = false,TimeUpdateMode mode = TimeUpdateMode.DeltaTime)
         {
-            this.TimerHandle();
-        }
-
-        private void TimerHandle()
-        {
-            if (timers.Count <= 0) return;
-
-
-            for(int i = timers.Count-1; i >=0; i--)
+            if (timer.Equal(Timer.zero)) return false;
+            if (timer.currentTime >= timer.setTime)
             {
-                timers[i].Update();
-                if (timers[i].isFinish)
-                {
-
-                   timers.RemoveAt(i); 
-                }
+                if(!once) timer.currentTime = 0;
+                return true;
             }
-
-            
-        }
-
-        public  Timer TimerTrigger(float interval,Action callback)
-        {
-            
-            Timer tim = new Timer(interval, callback);
-            timers.Add(tim);
-            return tim;
+            float time = 0;
+            switch (mode)
+            {
+                case TimeUpdateMode.DeltaTime:
+                    time = Time.deltaTime;
+                    break;
+                case TimeUpdateMode.unscaledDeltaTime:
+                    time = Time.unscaledDeltaTime;
+                    break;
+                default:
+                    break;
+            }
+            timer.currentTime += time;
+            return false;
         }
     }
 }

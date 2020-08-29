@@ -32,10 +32,10 @@ namespace StarGame.Common
                 DontDestroyOnLoad(this.gameObject);
                 instance = this.gameObject.GetComponent<T>();
             }
-            this.OnStart();
+            this.OnAwake();
         }
 
-        protected virtual void OnStart()
+        protected virtual void OnAwake()
         {
 
         }
